@@ -1,0 +1,162 @@
+## query 1 #
+  (param_1 : start_person_id)
+  (param_2 : first_name)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  repeat(__.out('knows').simplePath()).times(3).emit().
+  dedup().has('firstName',eq('${param_2}')).
+  order().by(__.path().count(local)).by('lastName').by('id').
+  project('PersonId', 'PersonLastName', 'DistanceFromPerson').
+    by('id').by('lastName').by(__.path().count(local)).
+  limit(20)
+
+## query 2 #
+  (param_1 : start_person_id)
+  (param_2 : max_date)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  out('knows').in('hasCreator').
+  hasLabel('Post').has('Post.creationDate',lte(${param_2})).
+  order().by('creationDate',decr).by('id',incr).
+  limit(20)
+
+## query 3 #
+  (param_1 : start_person_id)
+  (param_2 : start_date)
+  (param_3 : end_date)
+  (param_4 : country_x)
+  (param_5 : country_y)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  repeat(__.out('knows')).times(2).emit().dedup().
+  filter(__.out('isLocatedIn').out('isPartOf').has('name',without('${param_4}', '${param_5}'))).as('friends')
+  in('hasCreator').has('creationDate',inside(${param_2}, ${param_3})).out('isLocatedIn').as('msg_locations').
+  group().by(select('friends')).by(select('msg_locations').fold()).unfold().
+  filter(and(select(values).unfold().has('name', '${param_4}'), select(values).unfold().has('name', '${param_5}'))).
+  project('PersonId', 'xCount', 'yCount').
+    by(select(keys)).
+    by(select(values).unfold().has('name', '${param_4}').count()).
+    by(select(values).unfold().has('name', '${param_5}').count()).
+  order().by(select('xCount'), decr).by(select('PersonId')).limit(20)
+
+## query 4 #
+  (param_1 : start_person_id)
+  (param_2 : start_date)
+  (param_3 : end_date)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  out('knows').in('hasCreator').
+  hasLabel('Post').sideEffect(has('creationDate',lt(${param_2})).out('hasTag').store('excluded_tags')).barrier().
+  has('creationDate',inside(${param_2}, ${param_3})).out('hasTag').where(without('excluded_tags')).
+  group().by().by(count()).unfold().
+  order().by(select(values), decr).by(select(keys).values('name')).
+  project('TagName', 'TagCount').by(select(keys).values('name')).by(select(values)).
+  limit(10)
+
+## query 5 #
+  (param_1 : start_person_id)
+  (param_2 : min_date)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  out('knows').union(identity(), out('knows')).
+  dedup().store('friend').barrier().
+  inE('hasMember').has('joinDate', gt(${param_2})).outV().dedup().as('forum').
+  group().by().by(out('containerOf').out('hasCreator').where(within('friend')).count()).unfold().
+  order().by(select(values), decr).by(select(keys)).
+  limit(20)
+
+## query 6 #
+  (param_1 : start_person_id)
+  (param_2 : tag_name)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  repeat(__.out('knows')).times(2).emit().dedup().
+  in('hasCreator').hasLabel('Post').
+  filter(out('hasTag').values('name').
+         filter{it.get().contains('${param_2}')}).
+  out('hasTag').has('name', without('${param_2}')).
+  group().by('name').by(count()).unfold().
+  order().by(select(values), decr).by(select(keys)).
+  limit(10)
+
+## query 7 #
+  (param_1 : start_person_id)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  sideEffect(out('knows').store('friends')).barrier().
+  in('hasCreator').as('messages').
+  inE('likes').as('begin_like').outV().as('liker').
+  order().by(select('begin_like').values('creationDate'), decr).by(select('liker')).
+  project('LikePerson', 'LikeDate', 'MsgContent', 'LikeLatency', 'IsFriendFlag').
+    by(select('liker')).
+    by(select('begin_like').values('creationDate')).
+    by(select('messages').values('content')).
+    by(math('begin_like - messages').by('creationDate')).
+    by(select('liker').where(within('friends')).count()).
+  limit(20)
+
+## query 8 #
+  (param_1 : start_person_id)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  in('hasCreator').in('replyOf').hasLabel('Comment').as('comment').
+  out('hasCreator').as('commenter').
+  order().by(select('comment').values('creationDate'), decr).
+          by(select('comment')).
+  select('commenter','comment').
+  limit(20)
+
+## query 9 #
+  (param_1 : start_person_id)
+  (param_2 : max_date)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  repeat(__.out('knows')).times(2).emit().dedup().as('creators').
+  in('hasCreator').has('creationDate',lt(${param_2})).as('messages').
+  order().by(select('messages').values('creationDate'), decr).by(select('messages')).
+  project('MessageId', 'CreationDate', 'Creator', 'ContentOrImageFile').
+    by(select('messages')).
+    by(select('messages').values('creationDate')).
+    by(select('messages').out('hasCreator')).
+    by(select('messages').values('content', 'imageFile')).
+  limit(20)
+
+## query 10
+  (param_1 : start_person_id)
+  (param_2 : month)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  sideEffect(out('hasInterest').store('interested_tags')).barrier().
+  out('knows').out('knows').dedup().
+  filter(__.project('b_day', 'b_month').
+              by(math('_ - floor(_ / 100) * 100').by('birthday')).
+              by(math('floor(_ / 100) - floor(_ / 10000) * 100').by('birthday')).
+            or(and(select('b_month').is(eq(${param_2})), select('b_day').is(gte(21))),
+               and(select('b_month').is(eq((${param_2} + 1) % 12)), select('b_day').is(lt(22))))).as('person').
+  project('person_id', 'sum', 'common').
+    by(select('person')).
+    by(select('person').in('hasCreator').count()).
+    by(select('person').in('hasCreator').filter(out('hasTag').where(within('interested_tags')).count().is(gt(0))).count()).
+  project('PersonId', 'CommonScore').
+    by(select('person_id')).
+    by(math('2 * common - sum')).
+  order().by(select('CommonScore'), decr).by(select('PersonId')).
+  limit(10)
+
+## query 11
+  (param_1 : start_person_id)
+  (param_2 : country_name)
+  (param_3 : work_from_year)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  repeat(__.out('knows')).emit().times(2).dedup().as('friends').
+  outE('workAt').has('workFrom', lt(${param_3})).as('startWork').inV().
+  filter(out('isLocatedIn').has('name',eq('${param_2}'))).as('organ').
+  order().by(select('startWork').values('workFrom')).
+          by(select('friends')).
+          by(select('organ').values('name'), decr).
+  select('friends', 'startWork', 'organ').by().by('workFrom').by('name').
+  limit(10)
+
+## query 12
+  (param_1 : start_person_id)
+  (param_2 : tagClass_name)
+g.V().hasLabel('Person').has('Person.id', ${param_1}).
+  out('knows').as('friends').in('hasCreator').hasLabel('Comment').as('replies')
+  out('replyOf').hasLabel('Post').out('hasTag').
+  filter(out('hasType').union(identity(), out('isSubclassOf')).values('name').
+         filter{it.get().contains('${param_2}')}).as('tags').
+  group().by(select('friends')).
+          by(group().by(select('replies')).by(select('tags')).unfold().
+             union(select(keys).count(), select(values).dedup().values('name')).fold()).
+  unfold().order().by(select(values).unfold().limit(1), decr).by(select(keys)).
+  limit(20)
