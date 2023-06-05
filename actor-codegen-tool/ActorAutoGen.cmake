@@ -1,20 +1,6 @@
-set (LIBCLANG_PATH
-    "/usr/lib"
-    CACHE
-    STRING
-    "libclang path in system.")
-
-set (ACTOR_MODULD_DIR
-    ""
-    CACHE
-    STRING
-    "your actor module dir relative to your cxx project.")
-
-set (USER_INCLUDE_DIR
-    ""
-    CACHE
-    STRING
-    "your additional user-define include dir for codegen.")
+# set (LIBCLANG_PATH "/usr/lib" CACHE STRING "libclang path in system.")
+# set (ACTOR_MODULD_DIR "" CACHE STRING "your actor module dir relative to your cxx project.")
+# set (USER_INCLUDE_DIR "" CACHE STRING "your additional user-define include dir for codegen.")
 
 message ("Cmake libclang path: ${LIBCLANG_PATH}")
 
@@ -44,7 +30,7 @@ add_custom_target (actor-autogen)
 add_custom_command (TARGET actor-autogen POST_BUILD
     COMMAND python3 actor_codegen.py --libclang-dir=${LIBCLANG_PATH}
     --project-dir=${CMAKE_CURRENT_SOURCE_DIR}
-    --actor-mod-dir=${ACTOR_MODULD_DIR}
+    --actor-mod-dir=${ACTOR_MODULE_DIR}
     --sysactor-include=${OPTIONAL_SYSPATH}
     --user-include=${USER_INCLUDE_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
