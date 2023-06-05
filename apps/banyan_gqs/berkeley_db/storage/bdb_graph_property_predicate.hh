@@ -9,9 +9,10 @@
 #include <tuple>
 #include <cstring>
 #include <unordered_map>
-#include <berkeley/db_cxx.h>
+#include <db_cxx.h>
 #include <cassert>
 #include <seastar/core/print.hh>
+
 #include "berkeley_db/storage/bdb_graph_utils.hh"
 
 namespace storage {
