@@ -9,7 +9,7 @@
 #include <tuple>
 #include <cstring>
 #include <unordered_map>
-#include <berkeley/db_cxx.h>
+#include <db_cxx.h>
 #include <cassert>
 #include <seastar/core/print.hh>
 
