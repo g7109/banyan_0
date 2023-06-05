@@ -5,8 +5,12 @@ add_definitions(-DBANYAN_GQS_REPO="${CMAKE_CURRENT_SOURCE_DIR}")
 
 set (ACTOR_CUSTOM_SYS_LIB_PATH ${CMAKE_SOURCE_DIR}/include)
 set (USER_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/apps/banyan_gqs)
-set (ACTOR_MODULD_DIR .)
+set (ACTOR_MODULE_DIR .)
+
 include (${CMAKE_SOURCE_DIR}/actor-codegen-tool/ActorAutoGen.cmake)
+message ("CMake source dir is: ${CMAKE_SOURCE_DIR}")
+message ("CMake actor: ${ACTOR_MODULE_DIR}")
+message ("CMake user: ${USER_INCLUDE_DIR}")
 
 generate_fake_autogen_sources (${CMAKE_CURRENT_SOURCE_DIR} )
 file (GLOB AUTOGEN_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} generated/*.cc)
@@ -50,6 +54,7 @@ macro(RegisterLdbcQuery query_id)
     target_link_libraries (app_run_ic_${query_id} PRIVATE db_cxx)
     add_dependencies (app_run_ic_${query_id} actor-autogen)
 endmacro()
+
 RegisterLdbcQuery(1)
 RegisterLdbcQuery(2)
 RegisterLdbcQuery(3)
