@@ -8,10 +8,12 @@
 #include <tuple>
 #include <cstring>
 #include <unordered_map>
-#include <berkeley/db_cxx.h>
+#include <db_cxx.h>
 #include <cassert>
+
 #include "berkeley_db/storage/bdb_graph_utils.hh"
 #include "common/configs.hh"
+
 #include <seastar/core/byteorder.hh>
 
 namespace storage {
