@@ -8,12 +8,13 @@
 #include <stdio.h>
 #include <tuple>
 #include <cstring>
-#include <berkeley/db_cxx.h>
-#include <berkeley/db.h>
+#include <db_cxx.h>
+#include <db.h>
 #include <unordered_map>
 #include <chrono>
 #include <functional>
 #include <seastar/core/print.hh>
+
 #include "berkeley_db/storage/bdb_graph_utils.hh"
 #include "berkeley_db/storage/bdb_graph_property_predicate.hh"
 
